@@ -1,0 +1,26 @@
+# systemd unit for hfkv. Install with:
+#   sudo useradd --system --home /var/lib/hfkv --create-home hfkv
+#   sudo cp hfkv hfkv-cli /usr/local/bin/
+#   sudo cp hfkv.service /etc/systemd/system/
+#   sudo systemctl enable --now hfkv
+[Unit]
+Description=hfkv key-value server
+After=network.target
+
+[Service]
+User=hfkv
+Group=hfkv
+ExecStart=/usr/local/bin/hfkv --dir /var/lib/hfkv
+# Set a password and listen on all interfaces with, for example:
+# Environment=HFKV_PASSWORD=change-me
+# Environment=HFKV_BIND=0.0.0.0
+Restart=always
+LimitNOFILE=65536
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/hfkv
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

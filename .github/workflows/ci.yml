@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test -race ./...
+
+  compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Check with real Redis tools
+        run: |
+          sudo apt-get install -y -qq redis-tools >/dev/null
+          go build -o hfkv ./cmd/hfkv
+          ./hfkv --port 6390 --save 0 &
+          sleep 1
+          redis-cli -p 6390 set hello world
+          test "$(redis-cli -p 6390 get hello)" = world
+          redis-benchmark -p 6390 -q -n 20000 -t set,get,lpush,lpop,incr,hset,sadd,zadd
